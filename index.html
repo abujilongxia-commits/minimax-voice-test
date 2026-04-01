@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MiniMax 語音生成測試</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-card: #1e293b;
+      --accent-cyan: #06b6d4;
+      --accent-teal: #22d3ee;
+      --accent-purple: #a855f7;
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --border-color: rgba(6, 182, 212, 0.2);
+      --success: #22c55e;
+      --error: #ef4444;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', 'Noto Sans TC', sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-teal));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    header p {
+      color: var(--text-secondary);
+    }
+
+    /* Agents Banner */
+    .agents-banner {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      margin-bottom: 32px;
+      flex-wrap: wrap;
+    }
+
+    .agent-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 50px;
+      font-size: 0.9rem;
+    }
+
+    /* Main Card */
+    .main-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 32px;
+      margin-bottom: 24px;
+    }
+
+    .form-group {
+      margin-bottom: 24px;
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--text-primary);
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 120px;
+      padding: 16px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 1rem;
+      resize: vertical;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: var(--accent-cyan);
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .control-item {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .control-item label {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+
+    select, input[type="range"] {
+      width: 100%;
+      padding: 10px 12px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-family: inherit;
+    }
+
+    select:focus {
+      outline: none;
+      border-color: var(--accent-cyan);
+    }
+
+    .range-value {
+      text-align: center;
+      font-size: 0.9rem;
+      color: var(--accent-cyan);
+    }
+
+    /* Buttons */
+    .btn-group {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 14px 28px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      border: none;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-teal));
+      color: var(--bg-primary);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(6, 182, 212, 0.3);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-secondary {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--accent-cyan);
+    }
+
+    /* Status */
+    .status {
+      padding: 16px;
+      border-radius: 8px;
+      margin-top: 16px;
+      display: none;
+    }
+
+    .status.loading {
+      display: block;
+      background: rgba(6, 182, 212, 0.1);
+      border: 1px solid var(--accent-cyan);
+    }
+
+    .status.success {
+      display: block;
+      background: rgba(34, 197, 94, 0.1);
+      border: 1px solid var(--success);
+    }
+
+    .status.error {
+      display: block;
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid var(--error);
+    }
+
+    .status-text {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--border-color);
+      border-top-color: var(--accent-cyan);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Audio Player */
+    .audio-player {
+      margin-top: 16px;
+      display: none;
+    }
+
+    .audio-player.show {
+      display: block;
+    }
+
+    audio {
+      width: 100%;
+      margin-top: 12px;
+    }
+
+    /* History */
+    .history-section {
+      margin-top: 32px;
+    }
+
+    .history-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .history-header h2 {
+      font-size: 1.25rem;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .history-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .history-item:hover {
+      border-color: var(--accent-cyan);
+    }
+
+    .history-info {
+      flex: 1;
+    }
+
+    .history-text {
+      font-size: 0.95rem;
+      margin-bottom: 4px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 400px;
+    }
+
+    .history-meta {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+
+    .history-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .history-btn {
+      padding: 8px 12px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      color: var(--text-primary);
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: all 0.2s;
+    }
+
+    .history-btn:hover {
+      border-color: var(--accent-cyan);
+    }
+
+    .copy-code {
+      font-family: monospace;
+      font-size: 0.75rem;
+      padding: 8px;
+      background: var(--bg-primary);
+      border-radius: 4px;
+      margin-top: 8px;
+      display: none;
+    }
+
+    .copy-code.show {
+      display: block;
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-secondary);
+    }
+
+    /* API Key Warning */
+    .api-key-warning {
+      background: rgba(168, 85, 247, 0.1);
+      border: 1px solid var(--accent-purple);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .api-key-warning input {
+      flex: 1;
+      padding: 10px 12px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-family: monospace;
+    }
+
+    .api-key-warning input:focus {
+      outline: none;
+      border-color: var(--accent-purple);
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      margin-top: 48px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🎙️ MiniMax 語音生成測試</h1>
+      <p>AI Agents Team 語音服務測試平台</p>
+    </header>
+
+    <!-- 四幹部標識 -->
+    <div class="agents-banner">
+      <div class="agent-badge">🎯 布萊恩</div>
+      <div class="agent-badge">💬 宸瑋</div>
+      <div class="agent-badge">⚡ 恩齊</div>
+      <div class="agent-badge">🛡️ 凱莉</div>
+    </div>
+
+    <!-- API Key 設定 -->
+    <div class="api-key-warning">
+      <span>🔑</span>
+      <div style="flex: 1;">
+        <strong>API Key 設定</strong>
+        <p style="font-size: 0.85rem; margin-top: 4px; color: var(--text-secondary);">
+          請輸入你的 MiniMax API Key（將保存在瀏覽器本地）
+        </p>
+        <div style="display: flex; gap: 8px; margin-top: 8px;">
+          <input type="password" id="apiKey" placeholder="輸入 API Key..." style="flex: 1;">
+          <button class="btn btn-secondary" onclick="saveApiKey()" style="padding: 10px 16px;">儲存</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 主要輸入區 -->
+    <div class="main-card">
+      <div class="form-group">
+        <label for="textInput">📝 輸入文字</label>
+        <textarea id="textInput" placeholder="輸入要轉換為語音的文字...">你好，這是 MiniMax 語音生成測試。由 AI Agents Team 四幹部聯合服務。</textarea>
+      </div>
+
+      <div class="controls">
+        <div class="control-item">
+          <label>語音模型</label>
+          <select id="model">
+            <option value="speech-01">speech-01 (標準)</option>
+            <option value="speech-02">speech-02 (自然)</option>
+          </select>
+        </div>
+
+        <div class="control-item">
+          <label>語速</label>
+          <input type="range" id="speed" min="0.5" max="2" step="0.1" value="1">
+          <div class="range-value" id="speedValue">1.0x</div>
+        </div>
+
+        <div class="control-item">
+          <label>語調</label>
+          <select id="tone">
+            <option value="friendly">friendly (友好)</option>
+            <option value="professional">professional (專業)</option>
+            <option value="warm">warm (溫暖)</option>
+            <option value="calm">calm (平靜)</option>
+          </select>
+        </div>
+
+        <div class="control-item">
+          <label>音量</label>
+          <input type="range" id="volume" min="0" max="1" step="0.1" value="0.8">
+          <div class="range-value" id="volumeValue">0.8</div>
+        </div>
+      </div>
+
+      <div class="btn-group">
+        <button class="btn btn-primary" id="generateBtn" onclick="generateVoice()">
+          🎙️ 生成語音
+        </button>
+        <button class="btn btn-secondary" onclick="clearForm()">
+          🗑️ 清除
+        </button>
+      </div>
+
+      <div class="status" id="status">
+        <div class="status-text">
+          <div class="spinner"></div>
+          <span id="statusText">處理中...</span>
+        </div>
+      </div>
+
+      <div class="audio-player" id="audioPlayer">
+        <label>▶️ 生成的語音</label>
+        <audio id="audio" controls></audio>
+        <div style="margin-top: 12px;">
+          <button class="history-btn" onclick="copyUrl()">📋 複製 URL</button>
+          <button class="history-btn" onclick="showEmbedCode()">🔗 取得嵌入碼</button>
+        </div>
+        <div class="copy-code" id="embedCode"></div>
+      </div>
+    </div>
+
+    <!-- 歷史記錄 -->
+    <div class="history-section">
+      <div class="history-header">
+        <h2>📜 歷史記錄</h2>
+        <button class="btn btn-secondary" onclick="clearHistory()" style="padding: 8px 16px; font-size: 0.85rem;">
+          清除全部
+        </button>
+      </div>
+      <div class="history-list" id="historyList">
+        <div class="empty-state">尚無歷史記錄</div>
+      </div>
+    </div>
+
+    <footer>
+      <p>由 AI Agents Team 四幹部（布萊恩、宸瑋、恩齊、凱莉）提供技術支援</p>
+    </footer>
+  </div>
+
+  <script>
+    // ============ 狀態管理 ============
+    let currentAudioUrl = '';
+    let currentTaskId = '';
+
+    // ============ 初始化 ============
+    document.addEventListener('DOMContentLoaded', () => {
+      loadApiKey();
+      loadHistory();
+      setupRangeListeners();
+    });
+
+    function setupRangeListeners() {
+      const speedSlider = document.getElementById('speed');
+      const volumeSlider = document.getElementById('volume');
+
+      speedSlider.addEventListener('input', () => {
+        document.getElementById('speedValue').textContent = `${speedSlider.value}x`;
+      });
+
+      volumeSlider.addEventListener('input', () => {
+        document.getElementById('volumeValue').textContent = volumeSlider.value;
+      });
+    }
+
+    // ============ API Key 管理 ============
+    function saveApiKey() {
+      const key = document.getElementById('apiKey').value.trim();
+      if (key) {
+        localStorage.setItem('minimax_api_key', key);
+        alert('API Key 已儲存');
+      }
+    }
+
+    function loadApiKey() {
+      const key = localStorage.getItem('minimax_api_key');
+      if (key) {
+        document.getElementById('apiKey').value = key;
+      }
+    }
+
+    function getApiKey() {
+      return localStorage.getItem('minimax_api_key');
+    }
+
+    // ============ 語音生成 ============
+    async function generateVoice() {
+      const apiKey = getApiKey();
+      if (!apiKey) {
+        showStatus('error', '請先輸入並儲存 API Key');
+        return;
+      }
+
+      const text = document.getElementById('textInput').value.trim();
+      if (!text) {
+        showStatus('error', '請輸入文字');
+        return;
+      }
+
+      const model = document.getElementById('model').value;
+      const speed = parseFloat(document.getElementById('speed').value);
+      const tone = document.getElementById('tone').value;
+      const volume = parseFloat(document.getElementById('volume').value);
+
+      const generateBtn = document.getElementById('generateBtn');
+      generateBtn.disabled = true;
+      showStatus('loading', '正在生成語音...');
+
+      // 生成任務 ID
+      const taskId = generateTaskId();
+      currentTaskId = taskId;
+
+      try {
+        // 調用 MiniMax API
+        const response = await callMiniMaxAPI(apiKey, {
+          model,
+          text,
+          speed,
+          tone,
+          volume,
+          task_id: taskId
+        });
+
+        if (response.data) {
+          currentAudioUrl = response.data.audio_url;
+          showAudioPlayer(currentAudioUrl);
+          saveToHistory({
+            id: taskId,
+            text,
+            model,
+            speed,
+            tone,
+            volume,
+            audioUrl: currentAudioUrl,
+            timestamp: new Date().toISOString()
+          });
+          showStatus('success', '✅ 語音生成成功！');
+        } else {
+          throw new Error(response.error || '生成失敗');
+        }
+      } catch (error) {
+        console.error('API Error:', error);
+        showStatus('error', `生成失敗: ${error.message}`);
+      } finally {
+        generateBtn.disabled = false;
+      }
+    }
+
+    async function callMiniMaxAPI(apiKey, params) {
+      // 這是 MiniMax API 調用的實現
+      // 請根據實際的 MiniMax API 文檔調整
+
+      // 示範：使用模擬回應（請替換為真實 API 調用）
+      // 真實實現需要替換下面的 URL 和請求格式
+
+      /*
+      const response = await fetch('https://api.minimax.chat/v1/t2a_v2', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: params.model,
+          text: params.text,
+          stream: false,
+          extra: {
+            sample_rate: 32000,
+            speed: params.speed,
+            voice_setting: {
+              voice_id: params.tone === 'friendly' ? 'male-qn-qingse' : 'female-tianmei'
+            }
+          }
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`API 錯誤: ${response.status}`);
+      }
+
+      return await response.json();
+      */
+
+      // 模擬成功回應（示範用）
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          resolve({
+            data: {
+              audio_url: `https://example.com/audio/${params.task_id}.mp3`,
+              task_id: params.task_id
+            }
+          });
+        }, 1500);
+      });
+    }
+
+    function generateTaskId() {
+      const now = new Date();
+      const date = now.toISOString().slice(0, 10).replace(/-/g, '');
+      const seq = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+      return `voice-${date}-${seq}`;
+    }
+
+    // ============ UI 函數 ============
+    function showStatus(type, message) {
+      const status = document.getElementById('status');
+      const statusText = document.getElementById('statusText');
+
+      status.className = 'status ' + type;
+      statusText.textContent = message;
+
+      if (type !== 'loading') {
+        setTimeout(() => {
+          status.className = 'status';
+        }, 3000);
+      }
+    }
+
+    function showAudioPlayer(url) {
+      const player = document.getElementById('audioPlayer');
+      const audio = document.getElementById('audio');
+
+      audio.src = url;
+      player.classList.add('show');
+    }
+
+    function copyUrl() {
+      if (currentAudioUrl) {
+        navigator.clipboard.writeText(currentAudioUrl);
+        alert('URL 已複製');
+      }
+    }
+
+    function showEmbedCode() {
+      const embedDiv = document.getElementById('embedCode');
+      if (currentAudioUrl) {
+        const code = `<audio src="${currentAudioUrl}" controls></audio>`;
+        embedDiv.textContent = code;
+        embedDiv.classList.toggle('show');
+      }
+    }
+
+    function clearForm() {
+      document.getElementById('textInput').value = '';
+      document.getElementById('audioPlayer').classList.remove('show');
+    }
+
+    // ============ 歷史記錄 ============
+    function loadHistory() {
+      const history = JSON.parse(localStorage.getItem('voice_history') || '[]');
+      renderHistory(history);
+    }
+
+    function saveToHistory(record) {
+      const history = JSON.parse(localStorage.getItem('voice_history') || '[]');
+      history.unshift(record);
+      history.splice(20); // 最多保留 20 條
+      localStorage.setItem('voice_history', JSON.stringify(history));
+      renderHistory(history);
+    }
+
+    function renderHistory(history) {
+      const list = document.getElementById('historyList');
+
+      if (history.length === 0) {
+        list.innerHTML = '<div class="empty-state">尚無歷史記錄</div>';
+        return;
+      }
+
+      list.innerHTML = history.map(item => `
+        <div class="history-item">
+          <div class="history-info">
+            <div class="history-text" title="${escapeHtml(item.text)}">${escapeHtml(item.text)}</div>
+            <div class="history-meta">
+              ${item.model} | ${item.tone} | ${item.speed}x | ${formatTime(item.timestamp)}
+            </div>
+          </div>
+          <div class="history-actions">
+            <button class="history-btn" onclick="playHistory('${item.audioUrl}')">▶️ 播放</button>
+            <button class="history-btn" onclick="copyHistoryUrl('${item.audioUrl}')">📋 複製</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function playHistory(url) {
+      const audio = document.getElementById('audio');
+      audio.src = url;
+      document.getElementById('audioPlayer').classList.add('show');
+    }
+
+    function copyHistoryUrl(url) {
+      navigator.clipboard.writeText(url);
+      alert('URL 已複製');
+    }
+
+    function clearHistory() {
+      if (confirm('確定要清除所有歷史記錄？')) {
+        localStorage.removeItem('voice_history');
+        renderHistory([]);
+      }
+    }
+
+    // ============ 工具函數 ============
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function formatTime(isoString) {
+      const date = new Date(isoString);
+      return date.toLocaleString('zh-TW', {
+        month: 'numeric',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+  </script>
+</body>
+</html>
